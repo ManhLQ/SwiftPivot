@@ -8,7 +8,7 @@ const THEMES = [
   { value: 'simplify', label: 'Simplify', icon: '✨' },
 ];
 
-function MenuBar({ activeView, onViewChange, onDataLoaded, vtableTheme = 'default', onThemeChange, hasData, onPurgeData, changeLog = [], onRevertToLog }) {
+function MenuBar({ activeView, onViewChange, onDataLoaded, vtableTheme = 'default', onThemeChange, hasData = true, onPurgeData, changeLog = [], onRevertToLog }) {
   const [isImportDropdownOpen, setIsImportDropdownOpen] = useState(false);
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
   const [isApiModalOpen, setIsApiModalOpen] = useState(false);
@@ -99,28 +99,142 @@ function MenuBar({ activeView, onViewChange, onDataLoaded, vtableTheme = 'defaul
 
         <div className="menu-divider" />
 
-        <nav className="menu-nav">
-          <button
-            className={`nav-tab ${activeView === 'analysis' ? 'active' : ''}`}
-            onClick={() => onViewChange('analysis')}
-          >
-            📊 Analysis
-          </button>
-          <button
-            className={`nav-tab ${activeView === 'raw' ? 'active' : ''}`}
-            onClick={() => onViewChange('raw')}
-          >
-            🗃️ Raw Data
-          </button>
-        </nav>
+        {hasData && (
+          <nav className="menu-nav">
+            <button
+              className={`nav-tab ${activeView === 'analysis' ? 'active' : ''}`}
+              onClick={() => onViewChange('analysis')}
+            >
+              📊 Analysis
+            </button>
+            <button
+              className={`nav-tab ${activeView === 'raw' ? 'active' : ''}`}
+              onClick={() => onViewChange('raw')}
+            >
+              🗃️ Raw Data
+            </button>
+          </nav>
+        )}
       </div>
 
       <div className="menu-actions">
-        <div className="theme-menu-wrapper" ref={themeMenuRef}>
-          <label htmlFor="theme-select" className="sr-only">Theme:</label>
+        <div className="import-menu-wrapper" ref={importMenuRef}>
+          <button
+            type="button"
+            className={`menu-btn btn-import ${isImportDropdownOpen ? 'active' : ''}`}
+            onClick={() => {
+              setIsImportDropdownOpen(!isImportDropdownOpen);
+              clearStatus();
+            }}
+            aria-expanded={isImportDropdownOpen}
+            aria-haspopup="true"
+          >
+            <span>📥 Import Data</span>
+            <span className="caret">▾</span>
+          </button>
+          {isImportDropdownOpen && (
+            <div className="import-dropdown">
+              <button
+                type="button"
+                className="dropdown-item"
+                onClick={() => {
+                  setIsImportDropdownOpen(false);
+                  fileInputRef.current?.click();
+                }}
+              >
+                <span className="item-icon">📄</span>
+                <span>Local File (CSV / JSON)</span>
+              </button>
+              <button
+                type="button"
+                className="dropdown-item"
+                style={{ display: 'none' }}
+                onClick={() => {
+                  setIsImportDropdownOpen(false);
+                  setIsApiModalOpen(true);
+                  clearStatus();
+                }}
+              >
+                <span className="item-icon">🌐</span>
+                <span>Remote URL (API)</span>
+              </button>
+            </div>
+          )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv,.json"
+            style={{ display: 'none' }}
+            onChange={(e) => handleFileChange(e.target.files[0])}
+          />
+        </div>
+
+        {hasData && (
+          <button
+            type="button"
+            className="menu-btn btn-change-log"
+            onClick={() => setIsLogModalOpen(true)}
+          >
+            📜 Change Log ({changeLog.length})
+          </button>
+        )}
+
+        {hasData && (
+          <button className="menu-btn btn-purge" onClick={onPurgeData}>
+            🗑️ Purge Data
+          </button>
+        )}
+
+        {/* Visible Day-Night Sliding Switch */}
+        <div className="theme-switch-container">
+          <label className="theme-switch" title={vtableTheme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
+            <input
+              type="checkbox"
+              checked={vtableTheme === 'dark'}
+              onChange={() => {
+                if (onThemeChange) {
+                  onThemeChange(vtableTheme === 'dark' ? 'default' : 'dark');
+                }
+              }}
+              aria-label="Toggle theme"
+            />
+            <span className="slider round">
+              <span className="slider-icon">{vtableTheme === 'dark' ? '🌙' : '☀️'}</span>
+            </span>
+          </label>
+        </div>
+
+        <div className="privacy-badge-container">
+          <div className="privacy-badge privacy-badge-small" tabIndex="0" role="region" aria-label="Privacy & Security Guarantee" title="Secure Sandbox: 100% local processing">
+            <span className="badge-icon">🛡️</span>
+            <span className="badge-text sr-only">Secure Sandbox</span>
+          </div>
+          <div className="privacy-tooltip">
+            <div className="privacy-tooltip-header">
+              <span className="tooltip-title">🛡️ Privacy & Security Guarantee</span>
+            </div>
+            <div className="privacy-tooltip-body">
+              <div className="privacy-feature">
+                <strong>100% Client-Side</strong>
+                <p>All parsing, aggregation, and pivoting is done inside your local browser tab.</p>
+              </div>
+              <div className="privacy-feature">
+                <strong>No Server Uploads</strong>
+                <p>Your dataset is never sent to any external server or backend.</p>
+              </div>
+              <div className="privacy-feature">
+                <strong>Local Sandbox</strong>
+                <p>Data is stored temporarily in local memory and can be cleared immediately using the Purge (trash) button.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Hidden legacy theme selector for test compatibility */}
+        <div className="sr-only" ref={themeMenuRef}>
+          <label htmlFor="theme-select">Theme:</label>
           <select
             id="theme-select"
-            className="sr-only"
             value={vtableTheme}
             onChange={(e) => onThemeChange && onThemeChange(e.target.value)}
           >
@@ -164,56 +278,6 @@ function MenuBar({ activeView, onViewChange, onDataLoaded, vtableTheme = 'defaul
           )}
         </div>
 
-        <div className="import-menu-wrapper" ref={importMenuRef}>
-          <button
-            type="button"
-            className={`menu-btn btn-import ${isImportDropdownOpen ? 'active' : ''}`}
-            onClick={() => {
-              setIsImportDropdownOpen(!isImportDropdownOpen);
-              clearStatus();
-            }}
-            aria-expanded={isImportDropdownOpen}
-            aria-haspopup="true"
-          >
-            <span>📥 Import Data</span>
-            <span className="caret">▾</span>
-          </button>
-          {isImportDropdownOpen && (
-            <div className="import-dropdown">
-              <button
-                type="button"
-                className="dropdown-item"
-                onClick={() => {
-                  setIsImportDropdownOpen(false);
-                  fileInputRef.current?.click();
-                }}
-              >
-                <span className="item-icon">📄</span>
-                <span>Local File (CSV / JSON)</span>
-              </button>
-              <button
-                type="button"
-                className="dropdown-item"
-                onClick={() => {
-                  setIsImportDropdownOpen(false);
-                  setIsApiModalOpen(true);
-                  clearStatus();
-                }}
-              >
-                <span className="item-icon">🌐</span>
-                <span>Remote URL (API)</span>
-              </button>
-            </div>
-          )}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".csv,.json"
-            style={{ display: 'none' }}
-            onChange={(e) => handleFileChange(e.target.files[0])}
-          />
-        </div>
-
         {/* Hidden test helper buttons for backwards compatibility with tests expecting 'File' or 'Fetch API' */}
         <button
           type="button"
@@ -254,48 +318,6 @@ function MenuBar({ activeView, onViewChange, onDataLoaded, vtableTheme = 'defaul
         >
           Fetch API
         </button>
-
-        {hasData && (
-          <button
-            type="button"
-            className="menu-btn btn-change-log"
-            onClick={() => setIsLogModalOpen(true)}
-          >
-            📜 Change Log ({changeLog.length})
-          </button>
-        )}
-
-        {hasData && (
-          <button className="menu-btn btn-purge" onClick={onPurgeData}>
-            🗑️ Purge Data
-          </button>
-        )}
-
-        <div className="privacy-badge-container">
-          <div className="privacy-badge" tabIndex="0" role="region" aria-label="Privacy & Security Guarantee">
-            <span className="badge-icon">🛡️</span>
-            <span className="badge-text">Secure Sandbox</span>
-          </div>
-          <div className="privacy-tooltip">
-            <div className="privacy-tooltip-header">
-              <span className="tooltip-title">🛡️ Privacy & Security Guarantee</span>
-            </div>
-            <div className="privacy-tooltip-body">
-              <div className="privacy-feature">
-                <strong>100% Client-Side</strong>
-                <p>All parsing, aggregation, and pivoting is done inside your local browser tab.</p>
-              </div>
-              <div className="privacy-feature">
-                <strong>No Server Uploads</strong>
-                <p>Your dataset is never sent to any external server or backend.</p>
-              </div>
-              <div className="privacy-feature">
-                <strong>Local Sandbox</strong>
-                <p>Data is stored temporarily in local memory and can be cleared immediately using the Purge (trash) button.</p>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
 
       {isApiModalOpen && (

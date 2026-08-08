@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import MenuBar from './components/MenuBar.jsx';
 import DataEditor from './components/DataEditor.jsx';
 import PivotControls from './components/PivotControls.jsx';
@@ -6,6 +6,7 @@ import PivotView from './components/PivotView.jsx';
 import ChartPanel from './components/ChartPanel.jsx';
 import { deriveDefaultConfig, filterData } from './utils/pivotHelpers.js';
 import { loadPersistedData, savePersistedData, clearPersistedData } from './utils/storageHelpers.js';
+import { parseCSV, parseJSON } from './utils/parseData.js';
 import './App.css';
 
 function App() {
@@ -20,6 +21,8 @@ function App() {
     filters: {},
     aggregation: 'SUM',
   });
+  const [importError, setImportError] = useState('');
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     const persisted = loadPersistedData();
@@ -71,6 +74,24 @@ function App() {
       aggregation: 'SUM',
     });
   }, []);
+
+  const handleLocalFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImportError('');
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (!['csv', 'json'].includes(ext)) {
+      setImportError('Unsupported file type. Please upload .csv or .json files.');
+      return;
+    }
+    try {
+      const text = await file.text();
+      const parsed = ext === 'csv' ? parseCSV(text) : parseJSON(text);
+      handleDataLoaded(parsed);
+    } catch (err) {
+      setImportError(`Failed to parse file: ${err.message}`);
+    }
+  };
 
   const handleDataChange = useCallback((newData, changeEvent) => {
     const clonedSnapshot = newData.map((row) => ({ ...row }));
@@ -131,13 +152,59 @@ function App() {
 
       <main className="app-content">
         {data.length === 0 ? (
-          <div className="empty-state-panel">
-            <div className="empty-icon">⚡</div>
-            <h2>Welcome to SwiftPivot</h2>
-            <p>Load a dataset using the <strong>File</strong> menu or <strong>Fetch API</strong> button in the top menu bar to begin.</p>
-            <div className="privacy-note">
-              <span>🔒</span>
-              <span><strong>Privacy Guarantee:</strong> Your data is processed entirely in your browser and is never sent to any server.</span>
+          <div className="home-container">
+            <div className="home-hero">
+              <div className="hero-logo">⚡</div>
+              <h1>Welcome to SwiftPivot</h1>
+              <p className="sr-only">
+                Load a dataset using the file menu or the local uploader below to begin.
+              </p>
+            </div>
+
+            <div className="features-grid">
+              <div className="feature-card">
+                <span className="feature-icon">📂</span>
+                <h3>Local Ingestion</h3>
+                <p>Ingest CSV or JSON datasets directly from your local machine.</p>
+              </div>
+              <div className="feature-card">
+                <span className="feature-icon">📊</span>
+                <h3>Pivot & Basic Charts</h3>
+                <p>Drag fields to rows/columns, customize aggregates, and plot charts dynamically.</p>
+              </div>
+              <div className="feature-card">
+                <span className="feature-icon">📝</span>
+                <h3>Inline Data Editor</h3>
+                <p>Edit data rows inline with immediate pivot updates and full change history log.</p>
+              </div>
+              <div className="feature-card">
+                <span className="feature-icon">🛡️</span>
+                <h3>Secure Sandbox</h3>
+                <p>Purely client-side. No backend servers, no cloud uploads. Your data stays in your browser.</p>
+              </div>
+            </div>
+
+            <div className="home-upload-zone">
+              <h2>Select a CSV or JSON file to begin</h2>
+              <button 
+                type="button" 
+                className="btn-primary btn-lg"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                📁 Open Local Dataset
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv,.json"
+                style={{ display: 'none' }}
+                onChange={handleLocalFileChange}
+              />
+              {importError && <div className="home-import-error">{importError}</div>}
+              <div className="home-privacy-note">
+                <span>🔒</span>
+                <span>All file parsing and pivot processing happens 100% locally in your browser sandbox.</span>
+              </div>
             </div>
           </div>
         ) : activeView === 'raw' ? (

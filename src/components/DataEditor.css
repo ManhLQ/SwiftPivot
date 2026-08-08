@@ -115,7 +115,8 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 0.85rem;
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
 }
 
 .data-editor-table thead {
@@ -300,16 +301,14 @@
   background: transparent;
   border: none;
   color: var(--color-text);
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
   font-size: 0.85rem;
   width: 100%;
   outline: none;
   padding: 0.15rem 0;
 }
 
-.cell-input:focus {
-  color: #fff;
-}
 
 .row-number {
   color: var(--color-text-muted);
