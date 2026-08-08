@@ -7,7 +7,8 @@ describe('MenuBar', () => {
   const defaultProps = {
     activeView: 'analysis',
     onViewChange: vi.fn(),
-    onDataLoaded: vi.fn(),
+    onFetched: vi.fn(),
+    onLocalFileLoaded: vi.fn(),
   };
 
   beforeEach(() => {
@@ -51,8 +52,8 @@ describe('MenuBar', () => {
   });
 
   it('toggles import dropdown menu and handles file upload via Local File option', async () => {
-    const handleDataLoaded = vi.fn();
-    render(<MenuBar {...defaultProps} onDataLoaded={handleDataLoaded} />);
+    const handleLocalFileLoaded = vi.fn();
+    render(<MenuBar {...defaultProps} onLocalFileLoaded={handleLocalFileLoaded} />);
 
     const importMenuBtn = screen.getByRole('button', { name: /Import Data/i });
     expect(screen.queryByText(/Local File \(CSV \/ JSON\)/i)).not.toBeInTheDocument();
@@ -74,49 +75,76 @@ describe('MenuBar', () => {
     fireEvent.change(hiddenInput, { target: { files: [file] } });
 
     await waitFor(() => {
-      expect(handleDataLoaded).toHaveBeenCalledWith([
+      expect(handleLocalFileLoaded).toHaveBeenCalledWith([
         { Name: 'Alice', Sales: 100 },
         { Name: 'Bob', Sales: 200 },
       ]);
     });
   });
 
-  it('opens API Fetch modal via Remote URL dropdown option, fetches data with credentials: include, and calls onDataLoaded', async () => {
-    const handleDataLoaded = vi.fn();
-    render(<MenuBar {...defaultProps} onDataLoaded={handleDataLoaded} />);
+  it('does not render Refresh button when onRefresh is not provided', () => {
+    render(<MenuBar {...defaultProps} />);
+    expect(screen.queryByRole('button', { name: /Refresh/i })).not.toBeInTheDocument();
+  });
 
-    const importMenuBtn = screen.getByRole('button', { name: /Import Data/i });
-    fireEvent.click(importMenuBtn);
+  it('renders Refresh button when onRefresh prop is provided', () => {
+    render(<MenuBar {...defaultProps} onRefresh={vi.fn()} />);
+    expect(screen.getByRole('button', { name: /Refresh/i })).toBeInTheDocument();
+  });
 
-    const remoteUrlBtn = screen.getByText(/Remote URL \(API\)/i);
-    fireEvent.click(remoteUrlBtn);
+  it('calls onRefresh when Refresh button is clicked', async () => {
+    const handleRefresh = vi.fn().mockResolvedValue(undefined);
+    render(<MenuBar {...defaultProps} onRefresh={handleRefresh} />);
+    fireEvent.click(screen.getByRole('button', { name: /Refresh/i }));
+    expect(handleRefresh).toHaveBeenCalledTimes(1);
+  });
 
-    expect(screen.getByText(/Fetch Data from API/i)).toBeInTheDocument();
-    const urlInput = screen.getByPlaceholderText(/https:\/\/api.example.com\/data/i);
+  it('shows loading state on Refresh button while isRefreshing=true', () => {
+    render(<MenuBar {...defaultProps} onRefresh={vi.fn()} isRefreshing={true} />);
+    const btn = screen.getByRole('button', { name: /Refreshing/i });
+    expect(btn).toBeDisabled();
+  });
 
-    fireEvent.change(urlInput, { target: { value: 'https://api.example.com/items' } });
+  it('shows refreshError below Refresh button when provided', () => {
+    render(
+      <MenuBar
+        {...defaultProps}
+        onRefresh={vi.fn()}
+        refreshError="HTTP 503: Service Unavailable"
+      />,
+    );
+    expect(screen.getByText(/HTTP 503: Service Unavailable/i)).toBeInTheDocument();
+  });
 
-    const mockResponse = [
-      { id: '1', price: '50' },
-      { id: '2', price: '100' },
-    ];
+  it('opens RemoteSourceModal via "Remote URL (API)" dropdown and calls onFetched on success', async () => {
+    const handleFetched = vi.fn();
+    render(<MenuBar {...defaultProps} onFetched={handleFetched} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Import Data/i }));
+
+    const remoteBtn = screen.getByText(/Remote URL \(API\)/i);
+    expect(remoteBtn).toBeVisible();
+    fireEvent.click(remoteBtn);
+
+    expect(screen.getByText(/Remote Data Source/i)).toBeInTheDocument();
+
+    fireEvent.change(
+      screen.getByPlaceholderText(/https:\/\/api\.example\.com\/data/i),
+      { target: { value: 'https://api.test/records' } },
+    );
 
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: true,
-      json: async () => mockResponse,
+      json: async () => [{ id: '1', score: '99' }],
     });
 
-    const submitBtn = screen.getByRole('button', { name: 'Fetch Data' });
-    fireEvent.click(submitBtn);
+    fireEvent.click(screen.getByRole('button', { name: /Fetch Data/i }));
 
     await waitFor(() => {
-      expect(fetchSpy).toHaveBeenCalledWith('https://api.example.com/items', {
-        credentials: 'include',
-      });
-      expect(handleDataLoaded).toHaveBeenCalledWith([
-        { id: 1, price: 50 },
-        { id: 2, price: 100 },
-      ]);
+      expect(handleFetched).toHaveBeenCalledWith(
+        [{ id: 1, score: 99 }],
+        expect.objectContaining({ url: 'https://api.test/records', method: 'GET' }),
+      );
     });
 
     fetchSpy.mockRestore();

@@ -30,6 +30,7 @@ vi.mock('@visactor/react-vtable', () => ({
 }));
 
 import App from './App.jsx';
+import * as storageHelpers from './utils/storageHelpers.js';
 import { STORAGE_KEY } from './utils/storageHelpers.js';
 
 describe('App', () => {
@@ -258,7 +259,92 @@ describe('App', () => {
     salesInput = container.querySelector('#cell-0-Sales');
     expect(salesInput).not.toHaveClass('cell-edited');
   });
+
+  it('sets dataSource to "remote" and stores remoteConfig after handleRemoteFetched', async () => {
+    const saveSpy = vi.spyOn(storageHelpers, 'savePersistedData');
+    render(<App />);
+
+    const config = { url: 'https://api.test/data', method: 'GET', headers: {}, body: undefined, responsePath: '' };
+    const rows = [{ id: 1 }];
+
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => rows,
+    });
+
+    const fetchApiBtn = screen.getByRole('button', { name: 'Fetch API' });
+    fireEvent.click(fetchApiBtn);
+
+    const urlInput = screen.getByPlaceholderText(/https:\/\/api\.example\.com\/data/i);
+    fireEvent.change(urlInput, { target: { value: config.url } });
+    fireEvent.click(screen.getByRole('button', { name: /Fetch Data/i }));
+
+    await waitFor(() => {
+      expect(saveSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ remoteConfig: config, dataSource: 'remote' }),
+      );
+    });
+
+    fetchSpy.mockRestore();
+    saveSpy.mockRestore();
+  });
+
+  it('shows Refresh button after remote fetch and calls handleRefresh on click', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => [{ id: '1', val: '10' }],
+    });
+
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: 'Fetch API' }));
+    fireEvent.change(
+      screen.getByPlaceholderText(/https:\/\/api\.example\.com\/data/i),
+      { target: { value: 'https://api.test/data' } },
+    );
+    fireEvent.click(screen.getByRole('button', { name: /Fetch Data/i }));
+
+    await waitFor(() => {
+      expect(screen.queryByText(/Remote Data Source/i)).not.toBeInTheDocument();
+    });
+
+    const refreshBtn = screen.getByRole('button', { name: /Refresh/i });
+    expect(refreshBtn).toBeInTheDocument();
+
+    fetchSpy.mockResolvedValue({ ok: true, json: async () => [{ id: '2', val: '20' }] });
+    fireEvent.click(refreshBtn);
+
+    await waitFor(() => {
+      expect(fetchSpy).toHaveBeenCalledTimes(2);
+    });
+
+    fetchSpy.mockRestore();
+  });
+
+  it('hides Refresh button after purge', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => [{ id: '1' }],
+    });
+
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: 'Fetch API' }));
+    fireEvent.change(
+      screen.getByPlaceholderText(/https:\/\/api\.example\.com\/data/i),
+      { target: { value: 'https://api.test/data' } },
+    );
+    fireEvent.click(screen.getByRole('button', { name: /Fetch Data/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Refresh/i })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Purge Data/i }));
+    expect(screen.queryByRole('button', { name: /Refresh/i })).not.toBeInTheDocument();
+
+    fetchSpy.mockRestore();
+  });
 });
+
 
 
 
