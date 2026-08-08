@@ -440,11 +440,20 @@ function FieldTag({ field, onAddToRows, onAddToColumns, onAddToMeasures, onAddTo
 
 function FilterFieldTag({ field, data, selectedValues, onValuesChange, onRemove, onDragStart, onDragOver, onDrop, onDragEnd }) {
   const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
 
   const uniqueValues = useMemo(() => {
     const set = new Set(data.map((row) => String(row[field] ?? '')));
     return Array.from(set).sort();
   }, [data, field]);
+
+  const filteredValues = useMemo(() => {
+    if (!search.trim()) return uniqueValues;
+    const lower = search.trim().toLowerCase();
+    return uniqueValues.filter((v) => v.toLowerCase().includes(lower));
+  }, [uniqueValues, search]);
+
+  const displayValues = useMemo(() => filteredValues.slice(0, 100), [filteredValues]);
 
   const selectedCount = selectedValues.length;
   const totalCount = uniqueValues.length;
@@ -493,6 +502,17 @@ function FilterFieldTag({ field, data, selectedValues, onValuesChange, onRemove,
           className="filter-popover"
           onClick={(e) => e.stopPropagation()}
         >
+          {uniqueValues.length > 10 && (
+            <input
+              type="text"
+              className="col-filter-input"
+              placeholder="Search filter values..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onClick={(e) => e.stopPropagation()}
+              style={{ marginBottom: '0.5rem' }}
+            />
+          )}
           <div className="filter-popover-actions">
             <button className="filter-btn-shortcut" onClick={handleSelectAll}>
               Select All
@@ -502,7 +522,7 @@ function FilterFieldTag({ field, data, selectedValues, onValuesChange, onRemove,
             </button>
           </div>
           <div className="filter-checkbox-list">
-            {uniqueValues.map((val) => {
+            {displayValues.map((val) => {
               const isChecked = selectedValues.includes(val);
               return (
                 <label key={val} className="filter-checkbox-item">
@@ -515,6 +535,11 @@ function FilterFieldTag({ field, data, selectedValues, onValuesChange, onRemove,
                 </label>
               );
             })}
+            {filteredValues.length > 100 && (
+              <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', padding: '0.2rem' }}>
+                Showing top 100 of {filteredValues.length} values
+              </div>
+            )}
           </div>
         </div>
       )}

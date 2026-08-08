@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 
-const { mockVChartInstance, MockVChart } = vi.hoisted(() => {
+const { _mockVChartInstance, MockVChart } = vi.hoisted(() => {
   const mockVChartInstance = {
     renderSync: vi.fn(),
     updateSpec: vi.fn(),
@@ -11,7 +11,7 @@ const { mockVChartInstance, MockVChart } = vi.hoisted(() => {
   const MockVChart = vi.fn().mockImplementation(function () {
     return mockVChartInstance;
   });
-  return { mockVChartInstance, MockVChart };
+  return { _mockVChartInstance: mockVChartInstance, MockVChart };
 });
 
 vi.mock('@visactor/vchart', () => ({

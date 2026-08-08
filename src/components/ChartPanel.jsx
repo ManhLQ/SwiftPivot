@@ -52,22 +52,44 @@ function buildChartSpec(data, pivotConfig, chartType) {
       case 'AVG':
         aggValue = count > 0 ? sum / count : 0;
         break;
-      case 'MIN':
-        aggValue = Math.min(...values);
+      case 'MIN': {
+        let min = Infinity;
+        for (let i = 0; i < values.length; i++) {
+          if (values[i] < min) min = values[i];
+        }
+        aggValue = min === Infinity ? 0 : min;
         break;
-      case 'MAX':
-        aggValue = Math.max(...values);
+      }
+      case 'MAX': {
+        let max = -Infinity;
+        for (let i = 0; i < values.length; i++) {
+          if (values[i] > max) max = values[i];
+        }
+        aggValue = max === -Infinity ? 0 : max;
         break;
+      }
       default:
         aggValue = sum;
     }
     return { [categoryField]: key, [valueField]: Math.round(aggValue * 100) / 100 };
   });
 
+  let finalChartData = chartData;
+  if (chartData.length > 30) {
+    chartData.sort((a, b) => Math.abs(b[valueField] || 0) - Math.abs(a[valueField] || 0));
+    const topCategories = chartData.slice(0, 30);
+    const otherCategories = chartData.slice(30);
+    const otherSum = otherCategories.reduce((sum, item) => sum + (item[valueField] || 0), 0);
+    finalChartData = [
+      ...topCategories,
+      { [categoryField]: `Others (${otherCategories.length})`, [valueField]: Math.round(otherSum * 100) / 100 },
+    ];
+  }
+
   if (chartType === 'pie') {
     return {
       type: 'pie',
-      data: [{ id: 'data', values: chartData }],
+      data: [{ id: 'data', values: finalChartData }],
       categoryField: categoryField,
       valueField: valueField,
       outerRadius: 0.8,
@@ -96,7 +118,7 @@ function buildChartSpec(data, pivotConfig, chartType) {
 
   return {
     type: chartType,
-    data: [{ id: 'data', values: chartData }],
+    data: [{ id: 'data', values: finalChartData }],
     xField: categoryField,
     yField: valueField,
     axes: [

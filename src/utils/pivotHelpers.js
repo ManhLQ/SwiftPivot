@@ -112,16 +112,16 @@ export function filterData(data, filters) {
   if (!data || data.length === 0) return [];
   if (!filters || Object.keys(filters).length === 0) return data;
 
-  const activeFilterEntries = Object.entries(filters).filter(
-    ([_, allowedValues]) => Array.isArray(allowedValues)
-  );
+  const activeFilterEntries = Object.entries(filters)
+    .filter(([_, allowedValues]) => Array.isArray(allowedValues))
+    .map(([field, allowedValues]) => [field, new Set(allowedValues)]);
 
   if (activeFilterEntries.length === 0) return data;
 
   return data.filter((row) =>
-    activeFilterEntries.every(([field, allowedValues]) => {
+    activeFilterEntries.every(([field, allowedSet]) => {
       const rowVal = String(row[field] ?? '');
-      return allowedValues.includes(rowVal);
+      return allowedSet.has(rowVal);
     })
   );
 }
@@ -139,8 +139,9 @@ export function deriveDefaultConfig(data) {
   }
 
   const allCols = Object.keys(data[0]);
+  const sample = data.slice(0, 100);
   const numericCols = allCols.filter((col) =>
-    data.some((row) => typeof row[col] === 'number')
+    sample.some((row) => typeof row[col] === 'number')
   );
   const stringCols = allCols.filter(
     (col) => !numericCols.includes(col)

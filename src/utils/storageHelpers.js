@@ -5,12 +5,23 @@ export const MAX_LOG_ENTRIES = 100;
 
 export function savePersistedData({ data, pivotConfig, changeLog } = {}) {
   try {
+    const rawData = Array.isArray(data) ? data : [];
     const cappedLog = Array.isArray(changeLog) ? changeLog.slice(-MAX_LOG_ENTRIES) : [];
+    
+    // For large datasets (>500 rows), strip heavy dataSnapshot copies to prevent LocalStorage quota overflow
+    const sanitizedLog = rawData.length > 500
+      ? cappedLog.map((entry) => {
+          if (!entry || typeof entry !== 'object') return entry;
+          const { dataSnapshot: _dataSnapshot, ...rest } = entry;
+          return rest;
+        })
+      : cappedLog;
+
     const payload = {
       version: 1,
-      data: Array.isArray(data) ? data : [],
+      data: rawData,
       pivotConfig: pivotConfig || { rows: [], columns: [], measures: [], filters: {}, aggregation: 'SUM' },
-      changeLog: cappedLog,
+      changeLog: sanitizedLog,
     };
     localStorage.removeItem(STORAGE_KEY);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
