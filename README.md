@@ -1,17 +1,17 @@
 # SwiftPivot
 
-SwiftPivot is a lightweight, locally run pivot table tool designed for high-frequency criteria shifting and ad-hoc data analysis. It enables users to quickly ingest small-to-medium datasets (under 1,000 rows) and perform rapid interactive analysis.
+I found pivot tables extremely powerful and recently have to use them quite often. But each time the source data is updated, I had to export and repeat the entire setup again and again. I made this small tool to save myself some time, and hopefully, it is helpful for others too.
 
 ## 🔒 Privacy & Security
 
-**Your data never leaves your browser.** SwiftPivot operates entirely on the client side. Any files you upload or data you fetch are processed locally on your machine and are never sent to any external server.
+**Your data never leaves your browser.** SwiftPivot operates entirely on the client side. Any files you upload are processed locally on your machine and are never sent to any external server.
 
 ## Key Features
 
-- ⚡ **Flexible Data Ingestion**: Load local CSV or JSON files, or fetch directly from REST APIs using browser-based cookie authentication.
-- 📝 **Inline Raw Data Editor**: View and modify your loaded data in a clean grid layout. Any edits automatically trigger instant updates in the pivot view.
-- 📊 **Dynamic Pivot Table & Charts**: Drag-and-drop fields to construct custom pivot tables, apply criteria filtering, control aggregation methods, and instantly plot bar, line, or heatmap charts.
-- 💾 **Local Persistence**: Automatically persists your configuration and change log to local storage so you don't lose your work.
+- 📂 **Local Ingestion**: Load local CSV or JSON files instantly. No remote server or external data calls.
+- 📊 **Pivot & Basic Charts**: Drag fields to rows/columns, control aggregations, and generate simple charts.
+- 📝 **Inline Data Editor**: Edit data rows directly with full cell change logs and one-click rollback.
+- 🛡️ **Zero Server Uploads**: Operating strictly inside a local client-side sandbox. Your data never leaves your computer.
 
 ## Getting Started
 
@@ -36,5 +36,6 @@ npm run dev
 To run the unit tests:
 
 ```bash
-npm run test
+npx vitest run
 ```
+
