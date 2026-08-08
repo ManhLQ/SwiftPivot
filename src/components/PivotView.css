@@ -1,0 +1,42 @@
+.pivot-view {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 1rem;
+  box-shadow: var(--shadow-card);
+  box-sizing: border-box;
+}
+
+.pivot-view-header {
+  margin-bottom: 0.5rem;
+}
+
+.pivot-view-header h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.pivot-wrapper {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+}
+
+.pivot-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 0;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}

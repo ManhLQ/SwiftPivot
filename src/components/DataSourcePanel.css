@@ -1,0 +1,126 @@
+.data-source-panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-card);
+}
+
+.source-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 1.5rem;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+}
+
+.source-tab {
+  flex: 1;
+  padding: 0.7rem 1rem;
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.source-tab:hover {
+  color: var(--color-text);
+  background: var(--color-surface-hover);
+}
+
+.source-tab.active {
+  background: var(--color-accent);
+  color: #fff;
+}
+
+.source-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.file-drop-zone {
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--transition);
+  color: var(--color-text-muted);
+}
+
+.file-drop-zone:hover,
+.file-drop-zone.drag-over {
+  border-color: var(--color-accent);
+  background: rgba(108, 99, 255, 0.05);
+  color: var(--color-text);
+}
+
+.file-drop-zone input[type="file"] { display: none; }
+
+.file-drop-zone .icon {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.api-form {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.api-form input {
+  flex: 1;
+  padding: 0.7rem 1rem;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color var(--transition);
+}
+
+.api-form input:focus { border-color: var(--color-accent); }
+
+.btn-primary {
+  padding: 0.7rem 1.5rem;
+  background: var(--color-accent);
+  border: none;
+  border-radius: var(--radius-sm);
+  color: #fff;
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+
+.btn-primary:hover {
+  background: var(--color-accent-hover);
+  transform: translateY(-1px);
+}
+
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+.source-error {
+  color: var(--color-danger);
+  font-size: 0.85rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(255, 107, 107, 0.1);
+  border-radius: var(--radius-sm);
+}
+
+.source-success {
+  color: var(--color-success);
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
