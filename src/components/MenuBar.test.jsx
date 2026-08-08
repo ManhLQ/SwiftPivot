@@ -249,5 +249,26 @@ describe('MenuBar', () => {
     fireEvent.click(reverseButtons[1]);
     expect(onRevertToLog).toHaveBeenCalledWith('log_1');
   });
+
+  it('renders privacy badge container with badge text and tooltip detailing security guarantees', () => {
+    const { container } = render(<MenuBar {...defaultProps} />);
+
+    const badgeContainer = container.querySelector('.privacy-badge-container');
+    expect(badgeContainer).toBeInTheDocument();
+
+    const badge = container.querySelector('.privacy-badge');
+    expect(badge).toBeInTheDocument();
+    expect(badge).toHaveTextContent(/Secure Sandbox/i);
+
+    const tooltip = container.querySelector('.privacy-tooltip');
+    expect(tooltip).toBeInTheDocument();
+    expect(tooltip).toHaveTextContent(/100% Client-Side/i);
+    expect(tooltip).toHaveTextContent(/All parsing, aggregation, and pivoting is done inside your local browser tab/i);
+    expect(tooltip).toHaveTextContent(/No Server Uploads/i);
+    expect(tooltip).toHaveTextContent(/Your dataset is never sent to any external server or backend/i);
+    expect(tooltip).toHaveTextContent(/Local Sandbox/i);
+    expect(tooltip).toHaveTextContent(/Data is stored temporarily in local memory and can be cleared immediately using the Purge \(trash\) button/i);
+  });
 });
+
 

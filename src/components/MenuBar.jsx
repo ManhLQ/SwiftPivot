@@ -270,6 +270,32 @@ function MenuBar({ activeView, onViewChange, onDataLoaded, vtableTheme = 'defaul
             🗑️ Purge Data
           </button>
         )}
+
+        <div className="privacy-badge-container">
+          <div className="privacy-badge" tabIndex="0" role="region" aria-label="Privacy & Security Guarantee">
+            <span className="badge-icon">🛡️</span>
+            <span className="badge-text">Secure Sandbox</span>
+          </div>
+          <div className="privacy-tooltip">
+            <div className="privacy-tooltip-header">
+              <span className="tooltip-title">🛡️ Privacy & Security Guarantee</span>
+            </div>
+            <div className="privacy-tooltip-body">
+              <div className="privacy-feature">
+                <strong>100% Client-Side</strong>
+                <p>All parsing, aggregation, and pivoting is done inside your local browser tab.</p>
+              </div>
+              <div className="privacy-feature">
+                <strong>No Server Uploads</strong>
+                <p>Your dataset is never sent to any external server or backend.</p>
+              </div>
+              <div className="privacy-feature">
+                <strong>Local Sandbox</strong>
+                <p>Data is stored temporarily in local memory and can be cleared immediately using the Purge (trash) button.</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {isApiModalOpen && (
