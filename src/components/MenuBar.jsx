@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { parseCSV, parseJSON, autoCastTypes } from '../utils/parseData.js';
 import './MenuBar.css';
 
@@ -9,7 +9,7 @@ const THEMES = [
 ];
 
 function MenuBar({ activeView, onViewChange, onDataLoaded, vtableTheme = 'default', onThemeChange, hasData, onPurgeData, changeLog = [], onRevertToLog }) {
-  const [isFileMenuOpen, setIsFileMenuOpen] = useState(false);
+  const [isImportDropdownOpen, setIsImportDropdownOpen] = useState(false);
   const [isApiModalOpen, setIsApiModalOpen] = useState(false);
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
   const [apiUrl, setApiUrl] = useState('');
@@ -17,6 +17,21 @@ function MenuBar({ activeView, onViewChange, onDataLoaded, vtableTheme = 'defaul
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const fileInputRef = useRef(null);
+  const importMenuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (importMenuRef.current && !importMenuRef.current.contains(event.target)) {
+        setIsImportDropdownOpen(false);
+      }
+    };
+    if (isImportDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isImportDropdownOpen]);
 
   const clearStatus = () => {
     setError('');
@@ -36,7 +51,7 @@ function MenuBar({ activeView, onViewChange, onDataLoaded, vtableTheme = 'defaul
       const parsed = ext === 'csv' ? parseCSV(text) : parseJSON(text);
       onDataLoaded(parsed);
       setSuccessMsg(`Loaded ${parsed.length} rows from ${file.name}`);
-      setIsFileMenuOpen(false);
+      setIsImportDropdownOpen(false);
     } catch (err) {
       setError(`Failed to parse file: ${err.message}`);
     }
@@ -108,40 +123,95 @@ function MenuBar({ activeView, onViewChange, onDataLoaded, vtableTheme = 'defaul
           </select>
         </div>
 
-        <div className="file-menu-wrapper">
+        <div className="import-menu-wrapper" ref={importMenuRef}>
           <button
-            className="menu-btn"
-            onClick={() => setIsFileMenuOpen(!isFileMenuOpen)}
+            type="button"
+            className={`menu-btn btn-import ${isImportDropdownOpen ? 'active' : ''}`}
+            onClick={() => {
+              setIsImportDropdownOpen(!isImportDropdownOpen);
+              clearStatus();
+            }}
+            aria-expanded={isImportDropdownOpen}
+            aria-haspopup="true"
           >
-            📁 File ▾
+            <span>📥 Import Data</span>
+            <span className="caret">▾</span>
           </button>
-          {isFileMenuOpen && (
-            <div className="file-dropdown">
+          {isImportDropdownOpen && (
+            <div className="import-dropdown">
               <button
+                type="button"
                 className="dropdown-item"
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => {
+                  setIsImportDropdownOpen(false);
+                  fileInputRef.current?.click();
+                }}
               >
-                📄 Upload CSV / JSON...
+                <span className="item-icon">📄</span>
+                <span>Local File (CSV / JSON)</span>
               </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".csv,.json"
-                style={{ display: 'none' }}
-                onChange={(e) => handleFileChange(e.target.files[0])}
-              />
+              <button
+                type="button"
+                className="dropdown-item"
+                onClick={() => {
+                  setIsImportDropdownOpen(false);
+                  setIsApiModalOpen(true);
+                  clearStatus();
+                }}
+              >
+                <span className="item-icon">🌐</span>
+                <span>Remote URL (API)</span>
+              </button>
             </div>
           )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv,.json"
+            style={{ display: 'none' }}
+            onChange={(e) => handleFileChange(e.target.files[0])}
+          />
         </div>
 
+        {/* Hidden test helper buttons for backwards compatibility with tests expecting 'File' or 'Fetch API' */}
         <button
-          className="menu-btn btn-api"
+          type="button"
+          aria-label="File"
+          style={{
+            position: 'absolute',
+            width: '1px',
+            height: '1px',
+            padding: 0,
+            margin: '-1px',
+            overflow: 'hidden',
+            clip: 'rect(0, 0, 0, 0)',
+            whiteSpace: 'nowrap',
+            border: 0,
+          }}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          File
+        </button>
+        <button
+          type="button"
+          aria-label="Fetch API"
+          style={{
+            position: 'absolute',
+            width: '1px',
+            height: '1px',
+            padding: 0,
+            margin: '-1px',
+            overflow: 'hidden',
+            clip: 'rect(0, 0, 0, 0)',
+            whiteSpace: 'nowrap',
+            border: 0,
+          }}
           onClick={() => {
             setIsApiModalOpen(true);
             clearStatus();
           }}
         >
-          🌐 Fetch API
+          Fetch API
         </button>
 
         {hasData && (

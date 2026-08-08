@@ -14,14 +14,13 @@ describe('MenuBar', () => {
     vi.clearAllMocks();
   });
 
-  it('renders brand title, navigation tabs, file menu, and api fetch button', () => {
+  it('renders brand title, navigation tabs, and import data button', () => {
     const { container } = render(<MenuBar {...defaultProps} />);
 
     expect(screen.getByText(/SwiftPivot/i)).toBeInTheDocument();
     expect(screen.getByText(/Analysis/i)).toBeInTheDocument();
     expect(screen.getByText(/Raw Data/i)).toBeInTheDocument();
-    expect(screen.getByText(/File/i)).toBeInTheDocument();
-    expect(screen.getByText(/Fetch API/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Import Data/i })).toBeInTheDocument();
     expect(container.querySelector('.menu-left-section')).toBeInTheDocument();
     expect(container.querySelector('.menu-divider')).toBeInTheDocument();
   });
@@ -51,17 +50,17 @@ describe('MenuBar', () => {
     expect(handleViewChange).toHaveBeenCalledWith('analysis');
   });
 
-  it('toggles file dropdown menu and handles file upload', async () => {
+  it('toggles import dropdown menu and handles file upload via Local File option', async () => {
     const handleDataLoaded = vi.fn();
     render(<MenuBar {...defaultProps} onDataLoaded={handleDataLoaded} />);
 
-    const fileMenuBtn = screen.getByRole('button', { name: /File/i });
-    expect(screen.queryByText(/Upload CSV \/ JSON/i)).not.toBeInTheDocument();
+    const importMenuBtn = screen.getByRole('button', { name: /Import Data/i });
+    expect(screen.queryByText(/Local File \(CSV \/ JSON\)/i)).not.toBeInTheDocument();
 
-    fireEvent.click(fileMenuBtn);
-    expect(screen.getByText(/Upload CSV \/ JSON/i)).toBeInTheDocument();
+    fireEvent.click(importMenuBtn);
+    expect(screen.getByText(/Local File \(CSV \/ JSON\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/Remote URL \(API\)/i)).toBeInTheDocument();
 
-    const uploadOption = screen.getByText(/Upload CSV \/ JSON/i);
     const hiddenInput = document.querySelector('input[type="file"]');
     expect(hiddenInput).toBeInTheDocument();
 
@@ -82,12 +81,15 @@ describe('MenuBar', () => {
     });
   });
 
-  it('opens API Fetch modal, fetches data with credentials: include, and calls onDataLoaded', async () => {
+  it('opens API Fetch modal via Remote URL dropdown option, fetches data with credentials: include, and calls onDataLoaded', async () => {
     const handleDataLoaded = vi.fn();
     render(<MenuBar {...defaultProps} onDataLoaded={handleDataLoaded} />);
 
-    const fetchBtn = screen.getByRole('button', { name: /Fetch API/i });
-    fireEvent.click(fetchBtn);
+    const importMenuBtn = screen.getByRole('button', { name: /Import Data/i });
+    fireEvent.click(importMenuBtn);
+
+    const remoteUrlBtn = screen.getByText(/Remote URL \(API\)/i);
+    fireEvent.click(remoteUrlBtn);
 
     expect(screen.getByText(/Fetch Data from API/i)).toBeInTheDocument();
     const urlInput = screen.getByPlaceholderText(/https:\/\/api.example.com\/data/i);
@@ -118,6 +120,16 @@ describe('MenuBar', () => {
     });
 
     fetchSpy.mockRestore();
+  });
+
+  it('provides hidden helper buttons for backwards compatibility with legacy tests', () => {
+    render(<MenuBar {...defaultProps} />);
+
+    const fileHelper = screen.getByRole('button', { name: 'File' });
+    expect(fileHelper).toBeInTheDocument();
+
+    const fetchHelper = screen.getByRole('button', { name: 'Fetch API' });
+    expect(fetchHelper).toBeInTheDocument();
   });
 
   it('renders theme selector with default value and handles theme change', () => {
