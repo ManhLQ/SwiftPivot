@@ -152,6 +152,39 @@ describe('MenuBar', () => {
     expect(screen.queryByText('Bright')).not.toBeInTheDocument();
   });
 
+  it('toggles custom theme dropdown menu and selects a theme via dropdown items', () => {
+    const handleThemeChange = vi.fn();
+    render(<MenuBar {...defaultProps} vtableTheme="default" onThemeChange={handleThemeChange} />);
+
+    // Custom button shows active theme icon and label
+    const themeBtn = screen.getByRole('button', { name: /Default/i });
+    expect(themeBtn).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Dark/i })).not.toBeInTheDocument();
+
+    // Open dropdown
+    fireEvent.click(themeBtn);
+    const darkOption = screen.getByRole('button', { name: /Dark/i });
+    const simplifyOption = screen.getByRole('button', { name: /Simplify/i });
+    expect(darkOption).toBeInTheDocument();
+    expect(simplifyOption).toBeInTheDocument();
+
+    // Select Dark theme from dropdown
+    fireEvent.click(darkOption);
+    expect(handleThemeChange).toHaveBeenCalledWith('dark');
+    expect(screen.queryByRole('button', { name: /Simplify/i })).not.toBeInTheDocument();
+  });
+
+  it('closes custom theme dropdown when clicking outside', () => {
+    render(<MenuBar {...defaultProps} />);
+    const themeBtn = screen.getByRole('button', { name: /Default/i });
+
+    fireEvent.click(themeBtn);
+    expect(screen.getByRole('button', { name: /Dark/i })).toBeInTheDocument();
+
+    fireEvent.mouseDown(document.body);
+    expect(screen.queryByRole('button', { name: /Dark/i })).not.toBeInTheDocument();
+  });
+
   it('renders Purge button when dataset exists and calls onPurgeData on click', () => {
     const handlePurge = vi.fn();
     render(

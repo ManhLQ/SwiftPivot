@@ -3,13 +3,14 @@ import { parseCSV, parseJSON, autoCastTypes } from '../utils/parseData.js';
 import './MenuBar.css';
 
 const THEMES = [
-  { value: 'default', label: 'Default' },
-  { value: 'dark', label: 'Dark' },
-  { value: 'simplify', label: 'Simplify' },
+  { value: 'default', label: 'Default', icon: '☀️' },
+  { value: 'dark', label: 'Dark', icon: '🌙' },
+  { value: 'simplify', label: 'Simplify', icon: '✨' },
 ];
 
 function MenuBar({ activeView, onViewChange, onDataLoaded, vtableTheme = 'default', onThemeChange, hasData, onPurgeData, changeLog = [], onRevertToLog }) {
   const [isImportDropdownOpen, setIsImportDropdownOpen] = useState(false);
+  const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
   const [isApiModalOpen, setIsApiModalOpen] = useState(false);
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
   const [apiUrl, setApiUrl] = useState('');
@@ -18,20 +19,26 @@ function MenuBar({ activeView, onViewChange, onDataLoaded, vtableTheme = 'defaul
   const [successMsg, setSuccessMsg] = useState('');
   const fileInputRef = useRef(null);
   const importMenuRef = useRef(null);
+  const themeMenuRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (importMenuRef.current && !importMenuRef.current.contains(event.target)) {
         setIsImportDropdownOpen(false);
       }
+      if (themeMenuRef.current && !themeMenuRef.current.contains(event.target)) {
+        setIsThemeMenuOpen(false);
+      }
     };
-    if (isImportDropdownOpen) {
+    if (isImportDropdownOpen || isThemeMenuOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isImportDropdownOpen]);
+  }, [isImportDropdownOpen, isThemeMenuOpen]);
+
+  const activeThemeObj = THEMES.find((t) => t.value === vtableTheme) || THEMES[0];
 
   const clearStatus = () => {
     setError('');
@@ -109,11 +116,11 @@ function MenuBar({ activeView, onViewChange, onDataLoaded, vtableTheme = 'defaul
       </div>
 
       <div className="menu-actions">
-        <div className="theme-selector-wrapper">
-          <label htmlFor="theme-select" className="theme-label">Theme:</label>
+        <div className="theme-menu-wrapper" ref={themeMenuRef}>
+          <label htmlFor="theme-select" className="sr-only">Theme:</label>
           <select
             id="theme-select"
-            className="theme-select"
+            className="sr-only"
             value={vtableTheme}
             onChange={(e) => onThemeChange && onThemeChange(e.target.value)}
           >
@@ -121,6 +128,40 @@ function MenuBar({ activeView, onViewChange, onDataLoaded, vtableTheme = 'defaul
               <option key={t.value} value={t.value}>{t.label}</option>
             ))}
           </select>
+
+          <button
+            type="button"
+            className={`menu-btn btn-theme ${isThemeMenuOpen ? 'active' : ''}`}
+            onClick={() => setIsThemeMenuOpen(!isThemeMenuOpen)}
+            aria-expanded={isThemeMenuOpen}
+            aria-haspopup="true"
+          >
+            <span className="item-icon">{activeThemeObj.icon}</span>
+            <span>{activeThemeObj.label}</span>
+            <span className="caret">▾</span>
+          </button>
+
+          {isThemeMenuOpen && (
+            <div className="theme-dropdown">
+              {THEMES.map((t) => (
+                <button
+                  key={t.value}
+                  type="button"
+                  className={`dropdown-item ${t.value === vtableTheme ? 'active' : ''}`}
+                  onClick={() => {
+                    if (onThemeChange) {
+                      onThemeChange(t.value);
+                    }
+                    setIsThemeMenuOpen(false);
+                  }}
+                >
+                  <span className="item-icon">{t.icon}</span>
+                  <span>{t.label}</span>
+                  {t.value === vtableTheme && <span className="check-icon">✓</span>}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="import-menu-wrapper" ref={importMenuRef}>
