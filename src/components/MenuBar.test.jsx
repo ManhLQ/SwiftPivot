@@ -17,7 +17,7 @@ describe('MenuBar', () => {
   it('renders brand title, navigation tabs, file menu, and api fetch button', () => {
     render(<MenuBar {...defaultProps} />);
 
-    expect(screen.getByText(/Agile Data Pivot/i)).toBeInTheDocument();
+    expect(screen.getByText(/SwiftPivot/i)).toBeInTheDocument();
     expect(screen.getByText(/Analysis/i)).toBeInTheDocument();
     expect(screen.getByText(/Raw Data/i)).toBeInTheDocument();
     expect(screen.getByText(/File/i)).toBeInTheDocument();

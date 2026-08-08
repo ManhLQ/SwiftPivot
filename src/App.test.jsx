@@ -39,7 +39,7 @@ describe('App', () => {
 
   it('renders empty state initially when no data is loaded', () => {
     render(<App />);
-    expect(screen.getByText(/Welcome to Agile Data Pivot/i)).toBeInTheDocument();
+    expect(screen.getByText(/Welcome to SwiftPivot/i)).toBeInTheDocument();
     expect(screen.getByText(/Load a dataset using the/i)).toBeInTheDocument();
   });
 
@@ -120,7 +120,7 @@ describe('App', () => {
     fireEvent.click(purgeBtn);
 
     expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
-    expect(screen.getByText(/Welcome to Agile Data Pivot/i)).toBeInTheDocument();
+    expect(screen.getByText(/Welcome to SwiftPivot/i)).toBeInTheDocument();
   });
 
   it('propagates raw data changes to pivot view and chart and persists to localStorage', async () => {

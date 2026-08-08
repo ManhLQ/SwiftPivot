@@ -1,16 +1,40 @@
-# React + Vite
+# SwiftPivot
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+SwiftPivot is a lightweight, locally run pivot table tool designed for high-frequency criteria shifting and ad-hoc data analysis. It enables users to quickly ingest small-to-medium datasets (under 1,000 rows) and perform rapid interactive analysis.
 
-Currently, two official plugins are available:
+## 🔒 Privacy & Security
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+**Your data never leaves your browser.** SwiftPivot operates entirely on the client side. Any files you upload or data you fetch are processed locally on your machine and are never sent to any external server.
 
-## React Compiler
+## Key Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- ⚡ **Flexible Data Ingestion**: Load local CSV or JSON files, or fetch directly from REST APIs using browser-based cookie authentication.
+- 📝 **Inline Raw Data Editor**: View and modify your loaded data in a clean grid layout. Any edits automatically trigger instant updates in the pivot view.
+- 📊 **Dynamic Pivot Table & Charts**: Drag-and-drop fields to construct custom pivot tables, apply criteria filtering, control aggregation methods, and instantly plot bar, line, or heatmap charts.
+- 💾 **Local Persistence**: Automatically persists your configuration and change log to local storage so you don't lose your work.
 
-## Expanding the Oxlint configuration
+## Getting Started
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+### Installation
+
+Install dependencies using npm:
+
+```bash
+npm install
+```
+
+### Running Locally
+
+To start the development server:
+
+```bash
+npm run dev
+```
+
+### Running Tests
+
+To run the unit tests:
+
+```bash
+npm run test
+```

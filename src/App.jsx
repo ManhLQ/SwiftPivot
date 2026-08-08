@@ -133,8 +133,12 @@ function App() {
         {data.length === 0 ? (
           <div className="empty-state-panel">
             <div className="empty-icon">⚡</div>
-            <h2>Welcome to Agile Data Pivot</h2>
+            <h2>Welcome to SwiftPivot</h2>
             <p>Load a dataset using the <strong>File</strong> menu or <strong>Fetch API</strong> button in the top menu bar to begin.</p>
+            <div className="privacy-note">
+              <span>🔒</span>
+              <span><strong>Privacy Guarantee:</strong> Your data is processed entirely in your browser and is never sent to any server.</span>
+            </div>
           </div>
         ) : activeView === 'raw' ? (
           <DataEditor

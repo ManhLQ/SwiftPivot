@@ -71,7 +71,7 @@ function MenuBar({ activeView, onViewChange, onDataLoaded, vtableTheme = 'defaul
     <header className="menu-bar">
       <div className="menu-brand">
         <span className="brand-logo">⚡</span>
-        <span className="brand-title">Agile Data Pivot</span>
+        <span className="brand-title">SwiftPivot</span>
       </div>
 
       <nav className="menu-nav">
