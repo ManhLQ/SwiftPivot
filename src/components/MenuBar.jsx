@@ -69,25 +69,29 @@ function MenuBar({ activeView, onViewChange, onDataLoaded, vtableTheme = 'defaul
 
   return (
     <header className="menu-bar">
-      <div className="menu-brand">
-        <span className="brand-logo">⚡</span>
-        <span className="brand-title">SwiftPivot</span>
-      </div>
+      <div className="menu-left-section">
+        <div className="menu-brand">
+          <span className="brand-logo">⚡</span>
+          <span className="brand-title">SwiftPivot</span>
+        </div>
 
-      <nav className="menu-nav">
-        <button
-          className={`nav-tab ${activeView === 'analysis' ? 'active' : ''}`}
-          onClick={() => onViewChange('analysis')}
-        >
-          📊 Analysis
-        </button>
-        <button
-          className={`nav-tab ${activeView === 'raw' ? 'active' : ''}`}
-          onClick={() => onViewChange('raw')}
-        >
-          🗃️ Raw Data
-        </button>
-      </nav>
+        <div className="menu-divider" />
+
+        <nav className="menu-nav">
+          <button
+            className={`nav-tab ${activeView === 'analysis' ? 'active' : ''}`}
+            onClick={() => onViewChange('analysis')}
+          >
+            📊 Analysis
+          </button>
+          <button
+            className={`nav-tab ${activeView === 'raw' ? 'active' : ''}`}
+            onClick={() => onViewChange('raw')}
+          >
+            🗃️ Raw Data
+          </button>
+        </nav>
+      </div>
 
       <div className="menu-actions">
         <div className="theme-selector-wrapper">

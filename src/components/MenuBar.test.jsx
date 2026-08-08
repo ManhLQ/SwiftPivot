@@ -15,13 +15,15 @@ describe('MenuBar', () => {
   });
 
   it('renders brand title, navigation tabs, file menu, and api fetch button', () => {
-    render(<MenuBar {...defaultProps} />);
+    const { container } = render(<MenuBar {...defaultProps} />);
 
     expect(screen.getByText(/SwiftPivot/i)).toBeInTheDocument();
     expect(screen.getByText(/Analysis/i)).toBeInTheDocument();
     expect(screen.getByText(/Raw Data/i)).toBeInTheDocument();
     expect(screen.getByText(/File/i)).toBeInTheDocument();
     expect(screen.getByText(/Fetch API/i)).toBeInTheDocument();
+    expect(container.querySelector('.menu-left-section')).toBeInTheDocument();
+    expect(container.querySelector('.menu-divider')).toBeInTheDocument();
   });
 
   it('highlights the active tab with the active class', () => {
