@@ -39,15 +39,44 @@ export function parseCSV(csvText) {
   return autoCastTypes(result.data);
 }
 
+function resolvePath(obj, path) {
+  if (!path || !path.trim()) return obj;
+  return path.trim().split('.').reduce((acc, key) => (acc != null ? acc[key] : undefined), obj);
+}
+
 /**
- * Parse JSON text into typed objects.
+ * Parse JSON text into typed objects with optional data path resolution.
  * @param {string} jsonText
+ * @param {string} [dataPath='']
  * @returns {Object[]}
  */
-export function parseJSON(jsonText) {
-  const parsed = JSON.parse(jsonText);
-  if (!Array.isArray(parsed)) {
-    throw new Error('JSON data must be an array of objects');
+export function parseJSON(jsonText, dataPath = '') {
+  if (!jsonText || jsonText.trim() === '') {
+    throw new Error('JSON input is empty');
   }
-  return autoCastTypes(parsed);
+
+  let parsed;
+  try {
+    parsed = JSON.parse(jsonText.trim());
+  } catch (err) {
+    throw new Error(`Invalid JSON format: ${err.message}`);
+  }
+
+  let rows;
+  const trimmedPath = dataPath ? dataPath.trim() : '';
+
+  if (trimmedPath !== '') {
+    const extracted = resolvePath(parsed, trimmedPath);
+    if (!Array.isArray(extracted)) {
+      throw new Error(`Data path "${trimmedPath}" did not resolve to an array`);
+    }
+    rows = extracted;
+  } else if (Array.isArray(parsed)) {
+    rows = parsed;
+  } else {
+    throw new Error('JSON root must be an array of objects, or specify a data path (e.g. "result.data")');
+  }
+
+  return autoCastTypes(rows);
 }
+
