@@ -297,6 +297,19 @@ describe('MenuBar', () => {
     expect(tooltip).toHaveTextContent(/Local Sandbox/i);
     expect(tooltip).toHaveTextContent(/Data is stored temporarily in local memory and can be cleared immediately using the Purge \(trash\) button/i);
   });
+
+  it('opens PasteJsonModal when selecting Paste JSON from import dropdown', () => {
+    render(<MenuBar hasData={true} onViewChange={() => {}} onDataLoaded={() => {}} />);
+
+    const importBtn = screen.getByRole('button', { name: /Import Data/i });
+    fireEvent.click(importBtn);
+
+    const pasteJsonItem = screen.getByRole('button', { name: /Paste JSON/i });
+    fireEvent.click(pasteJsonItem);
+
+    expect(screen.getByRole('heading', { name: /Paste Raw JSON Data/i })).toBeInTheDocument();
+  });
 });
+
 
 

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { parseCSV, parseJSON } from '../utils/parseData.js';
 import RemoteSourceModal from './RemoteSourceModal.jsx';
+import PasteJsonModal from './PasteJsonModal.jsx';
 import './MenuBar.css';
 
 const THEMES = [
@@ -28,6 +29,7 @@ function MenuBar({
   const [isImportDropdownOpen, setIsImportDropdownOpen] = useState(false);
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
   const [isApiModalOpen, setIsApiModalOpen] = useState(false);
+  const [isPasteModalOpen, setIsPasteModalOpen] = useState(false);
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
   const fileInputRef = useRef(null);
   const importMenuRef = useRef(null);
@@ -123,6 +125,17 @@ function MenuBar({
               >
                 <span className="item-icon">📄</span>
                 <span>Local File (CSV / JSON)</span>
+              </button>
+              <button
+                type="button"
+                className="dropdown-item"
+                onClick={() => {
+                  setIsImportDropdownOpen(false);
+                  setIsPasteModalOpen(true);
+                }}
+              >
+                <span className="item-icon">📋</span>
+                <span>Paste JSON</span>
               </button>
               <button
                 type="button"
@@ -321,6 +334,17 @@ function MenuBar({
             setIsApiModalOpen(false);
           }}
           onClose={() => setIsApiModalOpen(false)}
+        />
+      )}
+
+      {isPasteModalOpen && (
+        <PasteJsonModal
+          onLoaded={(rows) => {
+            if (onLocalFileLoaded) onLocalFileLoaded(rows);
+            else if (onDataLoaded) onDataLoaded(rows);
+            setIsPasteModalOpen(false);
+          }}
+          onClose={() => setIsPasteModalOpen(false)}
         />
       )}
 
