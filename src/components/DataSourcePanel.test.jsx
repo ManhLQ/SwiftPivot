@@ -30,4 +30,37 @@ describe('DataSourcePanel – API tab with RemoteSourceModal', () => {
       expect(onDataLoaded).toHaveBeenCalledWith([{ col: 1 }]);
     });
   });
+
+  it('renders Paste JSON tab and processes JSON input', async () => {
+    const onDataLoaded = vi.fn();
+    render(<DataSourcePanel onDataLoaded={onDataLoaded} />);
+
+    const pasteTab = screen.getByRole('button', { name: /Paste JSON/i });
+    fireEvent.click(pasteTab);
+
+    const textarea = screen.getByLabelText(/Paste JSON/i);
+    fireEvent.change(textarea, { target: { value: '[{"id": 100}]' } });
+
+    const loadBtn = screen.getByRole('button', { name: /Load JSON Data/i });
+    fireEvent.click(loadBtn);
+
+    expect(onDataLoaded).toHaveBeenCalledWith([{ id: 100 }]);
+  });
+
+  it('supports data path input for JSON file uploads', async () => {
+    const onDataLoaded = vi.fn();
+    render(<DataSourcePanel onDataLoaded={onDataLoaded} />);
+
+    const pathInput = screen.getByLabelText(/Data Path/i);
+    fireEvent.change(pathInput, { target: { value: 'result.items' } });
+
+    const file = new File([JSON.stringify({ result: { items: [{ a: 1 }] } })], 'data.json', { type: 'application/json' });
+    const input = screen.getByTestId('file-input');
+
+    fireEvent.change(input, { target: { files: [file] } });
+
+    await vi.waitFor(() => {
+      expect(onDataLoaded).toHaveBeenCalledWith([{ a: 1 }]);
+    });
+  });
 });

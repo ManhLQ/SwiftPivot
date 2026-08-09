@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { parseCSV, parseJSON } from '../utils/parseData.js';
 import RemoteSourceModal from './RemoteSourceModal.jsx';
+import PasteJsonModal from './PasteJsonModal.jsx';
 import './DataSourcePanel.css';
 
 function DataSourcePanel({ onDataLoaded }) {
@@ -8,6 +9,7 @@ function DataSourcePanel({ onDataLoaded }) {
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [dragOver, setDragOver] = useState(false);
+  const [fileDataPath, setFileDataPath] = useState('');
   const fileInputRef = useRef(null);
 
   const clearStatus = () => { setError(''); setSuccessMsg(''); };
@@ -22,7 +24,7 @@ function DataSourcePanel({ onDataLoaded }) {
     }
     try {
       const text = await file.text();
-      const parsed = ext === 'csv' ? parseCSV(text) : parseJSON(text);
+      const parsed = ext === 'csv' ? parseCSV(text) : parseJSON(text, fileDataPath);
       onDataLoaded(parsed);
       setSuccessMsg(`Loaded ${parsed.length} rows from ${file.name}`);
     } catch (err) {
@@ -35,21 +37,50 @@ function DataSourcePanel({ onDataLoaded }) {
       <div className="source-tabs">
         <button id="tab-file-upload" className={`source-tab ${activeTab === 'file' ? 'active' : ''}`}
           onClick={() => { setActiveTab('file'); clearStatus(); }}>📁 File Upload</button>
+        <button id="tab-paste-json" className={`source-tab ${activeTab === 'paste' ? 'active' : ''}`}
+          onClick={() => { setActiveTab('paste'); clearStatus(); }}>📋 Paste JSON</button>
         <button id="tab-api-fetch" className={`source-tab ${activeTab === 'api' ? 'active' : ''}`}
           onClick={() => { setActiveTab('api'); clearStatus(); }}>🌐 API Fetch</button>
       </div>
       <div className="source-content">
         {activeTab === 'file' && (
-          <div id="file-drop-zone" className={`file-drop-zone ${dragOver ? 'drag-over' : ''}`}
-            onClick={() => fileInputRef.current?.click()}
-            onDrop={(e) => { e.preventDefault(); setDragOver(false); handleFile(e.dataTransfer.files[0]); }}
-            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-            onDragLeave={() => setDragOver(false)}>
-            <div className="icon">📄</div>
-            <p>Drop a <strong>.csv</strong> or <strong>.json</strong> file here, or click to browse</p>
-            <input ref={fileInputRef} type="file" accept=".csv,.json"
-              onChange={(e) => handleFile(e.target.files[0])} id="file-input" />
+          <div className="file-upload-wrapper">
+            <div id="file-drop-zone" className={`file-drop-zone ${dragOver ? 'drag-over' : ''}`}
+              onClick={() => fileInputRef.current?.click()}
+              onDrop={(e) => { e.preventDefault(); setDragOver(false); handleFile(e.dataTransfer.files[0]); }}
+              onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+              onDragLeave={() => setDragOver(false)}>
+              <div className="icon">📄</div>
+              <p>Drop a <strong>.csv</strong> or <strong>.json</strong> file here, or click to browse</p>
+              <input ref={fileInputRef} type="file" accept=".csv,.json"
+                onChange={(e) => handleFile(e.target.files[0])} id="file-input" data-testid="file-input" />
+            </div>
+
+            <div className="file-schema-option">
+              <label htmlFor="file-data-path" className="schema-label">
+                JSON Data Path <span className="schema-hint">(optional for .json files, e.g. result.data)</span>
+              </label>
+              <input
+                id="file-data-path"
+                type="text"
+                className="schema-input"
+                placeholder="e.g. result.data"
+                value={fileDataPath}
+                onChange={(e) => setFileDataPath(e.target.value)}
+                aria-label="Data Path"
+              />
+            </div>
           </div>
+        )}
+        {activeTab === 'paste' && (
+          <PasteJsonModal
+            embedded
+            onLoaded={(rows) => {
+              onDataLoaded(rows);
+              setSuccessMsg(`Loaded ${rows.length} rows from pasted JSON`);
+            }}
+            onClose={() => {}}
+          />
         )}
         {activeTab === 'api' && (
           <RemoteSourceModal
