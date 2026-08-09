@@ -58,26 +58,32 @@ describe('parseCSV', () => {
   });
 });
 
-describe('parseJSON', () => {
-  it('parses valid JSON array', () => {
-    const json = '[{"name":"Alice","age":30}]';
+describe('parseJSON with schema data path and validation', () => {
+  it('parses valid top-level JSON array by default', () => {
+    const json = '[{"id": 1, "name": "Alice"}]';
     const result = parseJSON(json);
-    expect(result).toHaveLength(1);
-    expect(result[0].age).toBe(30);
+    expect(result).toEqual([{ id: 1, name: 'Alice' }]);
   });
 
-  it('throws if JSON is not an array', () => {
-    expect(() => parseJSON('{"key":"value"}')).toThrow('must be an array');
+  it('navigates dataPath like "result.data" to extract array', () => {
+    const json = JSON.stringify({ result: { data: [{ id: 2, name: 'Bob' }] } });
+    const result = parseJSON(json, 'result.data');
+    expect(result).toEqual([{ id: 2, name: 'Bob' }]);
   });
 
-  it('throws on invalid JSON', () => {
-    expect(() => parseJSON('not json')).toThrow();
+  it('throws descriptive error on malformed JSON', () => {
+    const malformed = '[{"id": 1, name: }]';
+    expect(() => parseJSON(malformed)).toThrow(/Invalid JSON format/i);
   });
 
-  it('auto-casts numeric strings in parsed JSON', () => {
-    const json = '[{"price":"9.99","name":"widget"}]';
-    const result = parseJSON(json);
-    expect(result[0].price).toBe(9.99);
-    expect(result[0].name).toBe('widget');
+  it('throws error when dataPath does not resolve to an array', () => {
+    const json = JSON.stringify({ result: { data: 'not-an-array' } });
+    expect(() => parseJSON(json, 'result.data')).toThrow(/did not resolve to an array/i);
+  });
+
+  it('throws error when JSON root is an object and no dataPath is provided', () => {
+    const json = JSON.stringify({ result: { data: [] } });
+    expect(() => parseJSON(json)).toThrow(/specify a data path/i);
   });
 });
+
