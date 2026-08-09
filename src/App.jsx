@@ -7,6 +7,7 @@ import ChartPanel from './components/ChartPanel.jsx';
 import { deriveDefaultConfig, filterData } from './utils/pivotHelpers.js';
 import { loadPersistedData, savePersistedData, clearPersistedData } from './utils/storageHelpers.js';
 import { parseCSV, parseJSON } from './utils/parseData.js';
+import { fetchRemote } from './utils/fetchRemote.js';
 import './App.css';
 
 function App() {
@@ -24,12 +25,19 @@ function App() {
   const [importError, setImportError] = useState('');
   const fileInputRef = useRef(null);
 
+  const [remoteConfig, setRemoteConfig] = useState(null);
+  const [dataSource, setDataSource] = useState(null); // 'remote' | 'local' | null
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [refreshError, setRefreshError] = useState('');
+
   useEffect(() => {
     const persisted = loadPersistedData();
     if (persisted) {
       setData(persisted.data);
       setPivotConfig(persisted.pivotConfig);
       setChangeLog(persisted.changeLog);
+      setRemoteConfig(persisted.remoteConfig ?? null);
+      setDataSource(persisted.dataSource ?? null);
     }
   }, []);
 
@@ -46,7 +54,7 @@ function App() {
     return filterData(data, pivotConfig.filters);
   }, [data, pivotConfig.filters]);
 
-  const handleDataLoaded = useCallback((newData) => {
+  const handleDataLoaded = useCallback((newData, sourceOverride = {}) => {
     const clonedData = newData.map((row) => ({ ...row }));
     const initialLog = [{
       id: `log_${Date.now()}`,
@@ -59,13 +67,48 @@ function App() {
     setData(newData);
     setPivotConfig(newConfig);
     setChangeLog(initialLog);
-    savePersistedData({ data: newData, pivotConfig: newConfig, changeLog: initialLog });
-  }, []);
+    const targetRemoteConfig = 'remoteConfig' in sourceOverride ? sourceOverride.remoteConfig : remoteConfig;
+    const targetDataSource = 'dataSource' in sourceOverride ? sourceOverride.dataSource : dataSource;
+    savePersistedData({
+      data: newData,
+      pivotConfig: newConfig,
+      changeLog: initialLog,
+      remoteConfig: targetRemoteConfig,
+      dataSource: targetDataSource,
+    });
+  }, [remoteConfig, dataSource]);
+
+  const handleRemoteFetched = useCallback((rows, config) => {
+    setRemoteConfig(config);
+    setDataSource('remote');
+    setRefreshError('');
+    handleDataLoaded(rows, { remoteConfig: config, dataSource: 'remote' });
+  }, [handleDataLoaded]);
+
+  const handleRefresh = useCallback(async () => {
+    if (!remoteConfig) return;
+    setIsRefreshing(true);
+    setRefreshError('');
+    try {
+      const rows = await fetchRemote(remoteConfig);
+      handleDataLoaded(rows, { remoteConfig, dataSource: 'remote' });
+    } catch (err) {
+      setRefreshError(err.message);
+      console.error('Refresh failed:', err);
+      throw err;
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [remoteConfig, handleDataLoaded]);
 
   const handlePurgeData = useCallback(() => {
     clearPersistedData();
     setData([]);
     setChangeLog([]);
+    setRemoteConfig(null);
+    setDataSource(null);
+    setIsRefreshing(false);
+    setRefreshError('');
     setPivotConfig({
       rows: [],
       columns: [],
@@ -87,7 +130,9 @@ function App() {
     try {
       const text = await file.text();
       const parsed = ext === 'csv' ? parseCSV(text) : parseJSON(text);
-      handleDataLoaded(parsed);
+      setRemoteConfig(null);
+      setDataSource('local');
+      handleDataLoaded(parsed, { remoteConfig: null, dataSource: 'local' });
     } catch (err) {
       setImportError(`Failed to parse file: ${err.message}`);
     }
@@ -99,8 +144,8 @@ function App() {
     const updatedLog = logWithSnapshot ? [...changeLog, logWithSnapshot] : changeLog;
     setData(newData);
     setChangeLog(updatedLog);
-    savePersistedData({ data: newData, pivotConfig, changeLog: updatedLog });
-  }, [changeLog, pivotConfig]);
+    savePersistedData({ data: newData, pivotConfig, changeLog: updatedLog, remoteConfig, dataSource });
+  }, [changeLog, pivotConfig, remoteConfig, dataSource]);
 
   const handleRevertToLog = useCallback((logId) => {
     const logIndex = changeLog.findIndex((entry) => entry.id === logId);
@@ -113,8 +158,8 @@ function App() {
 
     setData(restoredData);
     setChangeLog(updatedLog);
-    savePersistedData({ data: restoredData, pivotConfig, changeLog: updatedLog });
-  }, [changeLog, pivotConfig, data]);
+    savePersistedData({ data: restoredData, pivotConfig, changeLog: updatedLog, remoteConfig, dataSource });
+  }, [changeLog, pivotConfig, data, remoteConfig, dataSource]);
 
   const handleUndo = useCallback(() => {
     if (changeLog.length > 1) {
@@ -125,8 +170,8 @@ function App() {
 
   const handleConfigChange = useCallback((newConfig) => {
     setPivotConfig(newConfig);
-    savePersistedData({ data, pivotConfig: newConfig, changeLog });
-  }, [data, changeLog]);
+    savePersistedData({ data, pivotConfig: newConfig, changeLog, remoteConfig, dataSource });
+  }, [data, changeLog, remoteConfig, dataSource]);
 
   const handleThemeChange = useCallback((newTheme) => {
     setVtableTheme(newTheme);
@@ -142,12 +187,17 @@ function App() {
         activeView={activeView}
         onViewChange={setActiveView}
         onDataLoaded={handleDataLoaded}
+        onFetched={handleRemoteFetched}
+        onLocalFileLoaded={(rows) => handleDataLoaded(rows, { remoteConfig: null, dataSource: 'local' })}
         vtableTheme={vtableTheme}
         onThemeChange={handleThemeChange}
         hasData={data.length > 0}
         onPurgeData={handlePurgeData}
         changeLog={changeLog}
         onRevertToLog={handleRevertToLog}
+        onRefresh={dataSource === 'remote' ? handleRefresh : undefined}
+        isRefreshing={isRefreshing}
+        refreshError={refreshError}
       />
 
       <main className="app-content">

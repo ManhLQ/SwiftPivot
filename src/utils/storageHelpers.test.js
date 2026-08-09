@@ -57,3 +57,49 @@ describe('storageHelpers', () => {
     expect(loaded.data).toEqual(newPayload.data);
   });
 });
+
+describe('storageHelpers – remoteConfig and dataSource', () => {
+  beforeEach(() => localStorage.clear());
+
+  it('round-trips remoteConfig and dataSource=remote', () => {
+    const config = { url: 'https://api.test/data', method: 'GET', headers: {}, body: undefined, responsePath: '' };
+    savePersistedData({
+      data: [{ id: 1 }],
+      pivotConfig: { rows: [], columns: [], measures: [], filters: {}, aggregation: 'SUM' },
+      changeLog: [],
+      remoteConfig: config,
+      dataSource: 'remote',
+    });
+    const result = loadPersistedData();
+    expect(result.remoteConfig).toEqual(config);
+    expect(result.dataSource).toBe('remote');
+  });
+
+  it('round-trips remoteConfig=null and dataSource=local', () => {
+    savePersistedData({
+      data: [{ id: 1 }],
+      pivotConfig: { rows: [], columns: [], measures: [], filters: {}, aggregation: 'SUM' },
+      changeLog: [],
+      remoteConfig: null,
+      dataSource: 'local',
+    });
+    const result = loadPersistedData();
+    expect(result.remoteConfig).toBeNull();
+    expect(result.dataSource).toBe('local');
+  });
+
+  it('returns remoteConfig: null, dataSource: null for legacy v1 payloads', () => {
+    // Simulate a v1 payload (no remoteConfig/dataSource fields)
+    const v1payload = {
+      version: 1,
+      data: [{ id: 1 }],
+      pivotConfig: { rows: [], columns: [], measures: [], filters: {}, aggregation: 'SUM' },
+      changeLog: [],
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v1payload));
+    const result = loadPersistedData();
+    expect(result.remoteConfig).toBeNull();
+    expect(result.dataSource).toBeNull();
+  });
+});
+

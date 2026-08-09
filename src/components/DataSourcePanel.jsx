@@ -1,11 +1,10 @@
 import React, { useState, useRef } from 'react';
-import { parseCSV, parseJSON, autoCastTypes } from '../utils/parseData.js';
+import { parseCSV, parseJSON } from '../utils/parseData.js';
+import RemoteSourceModal from './RemoteSourceModal.jsx';
 import './DataSourcePanel.css';
 
 function DataSourcePanel({ onDataLoaded }) {
   const [activeTab, setActiveTab] = useState('file');
-  const [apiUrl, setApiUrl] = useState('');
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [dragOver, setDragOver] = useState(false);
@@ -31,25 +30,6 @@ function DataSourcePanel({ onDataLoaded }) {
     }
   };
 
-  const handleApiFetch = async () => {
-    clearStatus();
-    if (!apiUrl.trim()) { setError('Please enter a valid URL.'); return; }
-    setLoading(true);
-    try {
-      const response = await fetch(apiUrl.trim(), { credentials: 'include' });
-      if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      const json = await response.json();
-      const data = Array.isArray(json) ? json : [json];
-      const parsed = autoCastTypes(data);
-      onDataLoaded(parsed);
-      setSuccessMsg(`Loaded ${parsed.length} rows from API`);
-    } catch (err) {
-      setError(`API fetch failed: ${err.message}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="data-source-panel">
       <div className="source-tabs">
@@ -72,14 +52,14 @@ function DataSourcePanel({ onDataLoaded }) {
           </div>
         )}
         {activeTab === 'api' && (
-          <div className="api-form">
-            <input id="api-url-input" type="url" placeholder="https://api.example.com/data"
-              value={apiUrl} onChange={(e) => setApiUrl(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleApiFetch()} />
-            <button id="api-fetch-btn" className="btn-primary" onClick={handleApiFetch} disabled={loading}>
-              {loading ? 'Fetching…' : 'Fetch Data'}
-            </button>
-          </div>
+          <RemoteSourceModal
+            embedded
+            onFetched={(rows) => {
+              onDataLoaded(rows);
+              setSuccessMsg(`Loaded ${rows.length} rows from API`);
+            }}
+            onClose={() => {}}
+          />
         )}
         {error && <div className="source-error" id="source-error">{error}</div>}
         {successMsg && <div className="source-success" id="source-success">✅ {successMsg}</div>}

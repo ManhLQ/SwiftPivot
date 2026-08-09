@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { parseCSV, parseJSON, autoCastTypes } from '../utils/parseData.js';
+import { parseCSV, parseJSON } from '../utils/parseData.js';
+import RemoteSourceModal from './RemoteSourceModal.jsx';
 import './MenuBar.css';
 
 const THEMES = [
@@ -8,15 +9,26 @@ const THEMES = [
   { value: 'simplify', label: 'Simplify', icon: '✨' },
 ];
 
-function MenuBar({ activeView, onViewChange, onDataLoaded, vtableTheme = 'default', onThemeChange, hasData = true, onPurgeData, changeLog = [], onRevertToLog }) {
+function MenuBar({
+  activeView,
+  onViewChange,
+  onDataLoaded,
+  onFetched,
+  onLocalFileLoaded,
+  vtableTheme = 'default',
+  onThemeChange,
+  hasData = true,
+  onPurgeData,
+  changeLog = [],
+  onRevertToLog,
+  onRefresh,
+  isRefreshing,
+  refreshError,
+}) {
   const [isImportDropdownOpen, setIsImportDropdownOpen] = useState(false);
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
   const [isApiModalOpen, setIsApiModalOpen] = useState(false);
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
-  const [apiUrl, setApiUrl] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [successMsg, setSuccessMsg] = useState('');
   const fileInputRef = useRef(null);
   const importMenuRef = useRef(null);
   const themeMenuRef = useRef(null);
@@ -40,52 +52,20 @@ function MenuBar({ activeView, onViewChange, onDataLoaded, vtableTheme = 'defaul
 
   const activeThemeObj = THEMES.find((t) => t.value === vtableTheme) || THEMES[0];
 
-  const clearStatus = () => {
-    setError('');
-    setSuccessMsg('');
-  };
-
   const handleFileChange = async (file) => {
-    clearStatus();
     if (!file) return;
     const ext = file.name.split('.').pop().toLowerCase();
     if (!['csv', 'json'].includes(ext)) {
-      setError('Unsupported file type. Please upload .csv or .json files.');
       return;
     }
     try {
       const text = await file.text();
       const parsed = ext === 'csv' ? parseCSV(text) : parseJSON(text);
-      onDataLoaded(parsed);
-      setSuccessMsg(`Loaded ${parsed.length} rows from ${file.name}`);
+      if (onLocalFileLoaded) onLocalFileLoaded(parsed);
+      else if (onDataLoaded) onDataLoaded(parsed);
       setIsImportDropdownOpen(false);
     } catch (err) {
-      setError(`Failed to parse file: ${err.message}`);
-    }
-  };
-
-  const handleApiFetch = async () => {
-    clearStatus();
-    if (!apiUrl.trim()) {
-      setError('Please enter a valid URL.');
-      return;
-    }
-    setLoading(true);
-    try {
-      const response = await fetch(apiUrl.trim(), { credentials: 'include' });
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      const json = await response.json();
-      const data = Array.isArray(json) ? json : [json];
-      const parsed = autoCastTypes(data);
-      onDataLoaded(parsed);
-      setSuccessMsg(`Loaded ${parsed.length} rows from API`);
-      setTimeout(() => setIsApiModalOpen(false), 1200);
-    } catch (err) {
-      setError(`API fetch failed: ${err.message}`);
-    } finally {
-      setLoading(false);
+      console.error(`Failed to parse file: ${err.message}`);
     }
   };
 
@@ -124,7 +104,6 @@ function MenuBar({ activeView, onViewChange, onDataLoaded, vtableTheme = 'defaul
             className={`menu-btn btn-import ${isImportDropdownOpen ? 'active' : ''}`}
             onClick={() => {
               setIsImportDropdownOpen(!isImportDropdownOpen);
-              clearStatus();
             }}
             aria-expanded={isImportDropdownOpen}
             aria-haspopup="true"
@@ -148,11 +127,9 @@ function MenuBar({ activeView, onViewChange, onDataLoaded, vtableTheme = 'defaul
               <button
                 type="button"
                 className="dropdown-item"
-                style={{ display: 'none' }}
                 onClick={() => {
                   setIsImportDropdownOpen(false);
                   setIsApiModalOpen(true);
-                  clearStatus();
                 }}
               >
                 <span className="item-icon">🌐</span>
@@ -168,6 +145,23 @@ function MenuBar({ activeView, onViewChange, onDataLoaded, vtableTheme = 'defaul
             onChange={(e) => handleFileChange(e.target.files[0])}
           />
         </div>
+
+        {onRefresh && (
+          <div className="refresh-btn-wrapper">
+            <button
+              type="button"
+              className={`menu-btn btn-refresh ${isRefreshing ? 'refreshing' : ''}`}
+              onClick={onRefresh}
+              disabled={isRefreshing}
+              title="Re-fetch data from remote source"
+            >
+              {isRefreshing ? '⏳ Refreshing…' : '🔄 Refresh'}
+            </button>
+            {refreshError && (
+              <div className="refresh-error">{refreshError}</div>
+            )}
+          </div>
+        )}
 
         {hasData && (
           <button
@@ -313,7 +307,6 @@ function MenuBar({ activeView, onViewChange, onDataLoaded, vtableTheme = 'defaul
           }}
           onClick={() => {
             setIsApiModalOpen(true);
-            clearStatus();
           }}
         >
           Fetch API
@@ -321,37 +314,14 @@ function MenuBar({ activeView, onViewChange, onDataLoaded, vtableTheme = 'defaul
       </div>
 
       {isApiModalOpen && (
-        <div className="modal-overlay" onClick={() => setIsApiModalOpen(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>🌐 Fetch Data from API</h3>
-              <button className="modal-close" onClick={() => setIsApiModalOpen(false)}>
-                ✕
-              </button>
-            </div>
-            <div className="modal-body">
-              <p className="modal-desc">Enter a REST endpoint returning JSON data array.</p>
-              <input
-                type="url"
-                className="api-url-input"
-                placeholder="https://api.example.com/data"
-                value={apiUrl}
-                onChange={(e) => setApiUrl(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleApiFetch()}
-              />
-              {error && <div className="modal-error">{error}</div>}
-              {successMsg && <div className="modal-success">✅ {successMsg}</div>}
-            </div>
-            <div className="modal-footer">
-              <button className="btn-secondary" onClick={() => setIsApiModalOpen(false)}>
-                Cancel
-              </button>
-              <button className="btn-primary" onClick={handleApiFetch} disabled={loading}>
-                {loading ? 'Fetching…' : 'Fetch Data'}
-              </button>
-            </div>
-          </div>
-        </div>
+        <RemoteSourceModal
+          onFetched={(rows, config) => {
+            if (onFetched) onFetched(rows, config);
+            else if (onDataLoaded) onDataLoaded(rows);
+            setIsApiModalOpen(false);
+          }}
+          onClose={() => setIsApiModalOpen(false)}
+        />
       )}
 
       {isLogModalOpen && (

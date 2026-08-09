@@ -3,7 +3,7 @@ import { deriveDefaultConfig } from './pivotHelpers.js';
 export const STORAGE_KEY = 'agile_pivot_data';
 export const MAX_LOG_ENTRIES = 100;
 
-export function savePersistedData({ data, pivotConfig, changeLog } = {}) {
+export function savePersistedData({ data, pivotConfig, changeLog, remoteConfig = null, dataSource = null } = {}) {
   try {
     const rawData = Array.isArray(data) ? data : [];
     const cappedLog = Array.isArray(changeLog) ? changeLog.slice(-MAX_LOG_ENTRIES) : [];
@@ -18,10 +18,12 @@ export function savePersistedData({ data, pivotConfig, changeLog } = {}) {
       : cappedLog;
 
     const payload = {
-      version: 1,
+      version: 2,
       data: rawData,
       pivotConfig: pivotConfig || { rows: [], columns: [], measures: [], filters: {}, aggregation: 'SUM' },
       changeLog: sanitizedLog,
+      remoteConfig: remoteConfig || null,
+      dataSource: dataSource || null,
     };
     localStorage.removeItem(STORAGE_KEY);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
@@ -46,7 +48,9 @@ export function loadPersistedData() {
           timestamp: Date.now(),
           type: 'DATA_LOADED',
           summary: `Loaded dataset (${parsed.length} rows)`
-        }]
+        }],
+        remoteConfig: null,
+        dataSource: null,
       };
     }
 
@@ -62,6 +66,8 @@ export function loadPersistedData() {
         data: parsed.data,
         pivotConfig: parsed.pivotConfig || deriveDefaultConfig(parsed.data),
         changeLog: hydratedLog,
+        remoteConfig: parsed.remoteConfig || null,
+        dataSource: parsed.dataSource || null,
       };
     }
     return null;
